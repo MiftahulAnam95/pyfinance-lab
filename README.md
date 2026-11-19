@@ -22,7 +22,9 @@ npm run build
 npm run preview
 ```
 
-Alternatif tanpa npm bila sudah punya `dist/`: dari folder proyek jalankan `python3 -m http.server 8000 --directory dist`, lalu buka `http://localhost:8000`. Jangan membuka `index.html` via `file://`, karena rute dan aset dilayani lewat HTTP.
+Hasil build ada di `docs/`. Jalankan `npm run preview` (menyajikan `docs/` pada base situs) atau, bila base-nya `/`, `python3 -m http.server 8000 --directory docs` lalu buka `http://localhost:8000`. Jangan membuka `index.html` via `file://`, karena rute dan aset dilayani lewat HTTP.
+
+`npm run build` selalu diakhiri pemeriksaan `npm run verify`: setiap halaman harus sudah diprerender dan semua aset yang dirujuk harus ada di bawah base situs. Kalau `verify` gagal, jangan publikasikan hasil build — biasanya berarti menyajikan HTML dev atau folder yang salah sehingga halaman tampil kosong.
 
 ### Jalankan Python sungguhan
 
@@ -38,9 +40,9 @@ Di Windows coba `py -3 main.py` atau `python main.py`. Input contoh, satu per ba
 ### Deploy ke GitHub Pages
 
 1. Buat repositori **publik** di GitHub, misalnya `pyfinance-lab`. Untuk langkah Git di bawah, buat repo kosong tanpa README bawaan. Repositori publik juga membuat kode dan materi proyek bisa dilihat orang lain.
-2. Push **isi** folder `pyfinance-lab` ke branch `main` repositori itu. Pastikan `.github/workflows/pages.yml` dan `package-lock.json` terlihat di root repo (folder `.github` bisa tersembunyi di pengelola file). Jangan hanya mengunggah file ZIP atau folder `dist`.
-3. Di GitHub, buka **Settings → Pages → Build and deployment → Source**, lalu pilih **GitHub Actions**. Jika push pertama berjalan sebelum Pages aktif dan gagal, jalankan ulang dari **Actions → Deploy PyFinance Lab to Pages → Run workflow → main**.
-4. Tunggu job **deploy** lulus. Buka **Settings → Pages → Visit site**. Untuk repo proyek biasa, URL-nya berbentuk `https://USERNAME.github.io/NAMA-REPO/`. Push berikutnya ke `main` akan memicu deploy lagi.
+2. Push **isi** folder `pyfinance-lab` ke branch `main` repositori itu — termasuk folder `docs/` berisi hasil build. Pastikan `.github/workflows/pages.yml` dan `package-lock.json` terlihat di root repo (folder `.github` bisa tersembunyi di pengelola file). Jangan hanya mengunggah file ZIP.
+3. Di GitHub, buka **Settings → Pages → Build and deployment → Source**, lalu pilih **Deploy from a branch** dengan branch **main** dan folder **/docs**. Jika sebelumnya sudah memakai sumber lain, ubah dulu pilihan ini — tanpa itu GitHub akan menyajikan `index.html` pengembangan di root, yang memuat `/src/main.tsx` dan berakhir sebagai halaman kosong.
+4. Tunggu build Pages selesai, lalu buka **Settings → Pages → Visit site**. Untuk repo proyek biasa, URL-nya berbentuk `https://USERNAME.github.io/NAMA-REPO/`. Setiap push ke `main` memicu build ulang dari folder `docs/`. Workflow `.github/workflows/pages.yml` disediakan bila nanti ingin pindah ke mode **GitHub Actions**; workflow itu membangun ulang `docs/` dari sumber dan menjalankan pemeriksaan yang sama.
 
 Contoh push pertama dari terminal, dari folder hasil ekstrak. Ganti `USERNAME` dan `NAMA-REPO` dengan nama GitHub milikmu:
 
@@ -58,7 +60,7 @@ Workflow mengambil jalur situs dari `actions/configure-pages`, sehingga nama rep
 
 ### Deploy ke static host lain
 
-`npm run build` menghasilkan `dist/` untuk root domain. Untuk subfolder, misalnya `/nama-repo/`, set variabel lingkungan `SITE_BASE` ke `/nama-repo/` saat build (`SITE_BASE=/nama-repo/ npm run build` di macOS/Linux, atau `$env:SITE_BASE='/nama-repo/'; npm run build` di PowerShell). Host harus menyajikan `index.html` pada path direktori seperti `/nama-repo/presentasi/`. Tidak perlu server Node atau aturan redirect SPA. Versi dev tidak melakukan prerender.
+`npm run build` menulis hasil ke `docs/` dengan base yang dihitung otomatis (lihat `scripts/site-base.mjs`): saat build di GitHub Actions, base diambil dari nama repo sehingga aset dilayani dari `/NAMA-REPO/assets/…`; repo `USER.github.io` memakai akar domain. Untuk host atau subfolder lain, set `SITE_BASE` saat build (`SITE_BASE=/nama-folder/ npm run build` di macOS/Linux, atau `$env:SITE_BASE='/nama-folder/'; npm run build` di PowerShell). Root domain lokal bisa dipaksa dengan `SITE_BASE=/`. Host harus menyajikan `index.html` pada path direktori seperti `/nama-repo/presentasi/`. Tidak perlu server Node atau aturan redirect SPA. Versi dev tidak melakukan prerender.
 
 ## Asumsi dan batasan
 
@@ -78,6 +80,9 @@ Workflow mengambil jalur situs dari `actions/configure-pages`, sehingga nama rep
 | `src/sim.ts` | Logika simulator dan sumber jejak demo |
 | `src/motion.ts` | GSAP, ScrollTrigger, dan satu engine Lenis |
 | `scripts/prerender.mjs` | Penulisan HTML statis per halaman |
+| `scripts/site-base.mjs` | Penentuan base URL situs (otomatis dari nama repo) |
+| `scripts/verify-build.mjs` | Pemeriksaan `docs/`: sudah diprerender dan semua aset ada |
+| `docs/` | Hasil build yang dipublikasikan (GitHub Pages: branch `main`, folder `/docs`) |
 | `tests/`, `browser/` | Tes Python, paritas simulator, dan interaksi browser |
 
 ## Aset dan desain
@@ -89,7 +94,7 @@ Lihat [DESAIN.md](DESAIN.md). Ikon [Solar](https://icon-sets.iconify.design/sola
 ```sh
 npm run typecheck
 npm test                         # memerlukan python3 untuk unittest dan tes paritas
-npm run build
+npm run build && npm run verify
 npx playwright install chromium  # Linux bisa memakai --with-deps bila diperlukan
 npm run test:browser
 ```
