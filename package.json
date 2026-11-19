@@ -5,9 +5,10 @@
     "dev": "vite --host 0.0.0.0",
     "typecheck": "tsc --noEmit",
     "build": "vite build && vite build --ssr src/entry-server.tsx --outDir .prerender && node scripts/prerender.mjs",
-    "preview": "vite preview --host 0.0.0.0",
+    "preview": "vite preview --host 0.0.0.0 --outDir docs",
     "test": "python3 -m unittest discover -s tests -v && tsx --test tests/*.test.ts",
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "verify": "node scripts/verify-build.mjs"
   },
   "keywords": [],
   "author": "",

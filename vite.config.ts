@@ -1,12 +1,12 @@
 import {defineConfig} from 'vite';
+import {OUT_DIR, resolveSiteBase} from './scripts/site-base.mjs';
 
-const basePath = (process.env.SITE_BASE ?? '/').trim().replace(/^\/+|\/+$/g, '');
-if (basePath && !/^[\w.-]+(?:\/[\w.-]+)*$/.test(basePath)) {
-  throw new Error('SITE_BASE harus berupa jalur seperti /nama-repo/, bukan URL lengkap.');
-}
+// Halaman dipublikasikan dari docs/ (GitHub Pages: branch main, folder /docs).
+const base = resolveSiteBase();
 
 export default defineConfig({
-  base: basePath ? `/${basePath}/` : '/',
+  base,
+  build: {outDir: OUT_DIR, emptyOutDir: true},
   server: {host: '0.0.0.0', allowedHosts: true},
   preview: {host: '0.0.0.0', allowedHosts: true},
 });
