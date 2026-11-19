@@ -26,6 +26,19 @@ Hasil build ada di `docs/`. Jalankan `npm run preview` (menyajikan `docs/` pada 
 
 `npm run build` selalu diakhiri pemeriksaan `npm run verify`: setiap halaman harus sudah diprerender dan semua aset yang dirujuk harus ada di bawah base situs. Kalau `verify` gagal, jangan publikasikan hasil build — biasanya berarti menyajikan HTML dev atau folder yang salah sehingga halaman tampil kosong.
 
+### Kalau situs yang sudah di-hosting masih tampil kosong
+
+Halaman kosong (putih, tanpa teks sama sekali) hampir selalu berarti yang disajikan adalah `index.html` **pengembangan** di akar repo, yang memuat `/src/main.tsx` — berkas itu hanya ada di server dev. Halaman yang benar selalu memuat `/NAMA-REPO/assets/...`.
+
+Cek cepat:
+
+1. Buka `https://USERNAME.github.io/NAMA-REPO/`, klik kanan → **View Page Source**, cari `<script`. Kalau tertulis `/src/main.tsx`, sumber publikasinya salah.
+2. Di repo, buka **Settings → Pages → Build and deployment → Source** dan pastikan **Deploy from a branch**, **Branch: `main`**, **Folder: `/docs`** (bukan `/` atau `/root`). Setelan ini tidak disimpan di repo, jadi harus dipilih manual sekali di setiap repo.
+3. Setelah diubah, tunggu build Pages selesai (tab **Actions**, workflow `pages-build-deployment`), lalu muat ulang dengan **Ctrl+Shift+R** karena browser kerap menyimpan HTML lama.
+4. Kalau memilih mode **GitHub Actions** (workflow `.github/workflows/pages.yml`), pastikan Source-nya juga **GitHub Actions**, bukan Deploy from a branch. Jangan mencampur keduanya: workflow Actions tidak bisa menimpa situs yang sumbernya branch.
+
+Kalau `docs/` disajikan lewat sumber branch, `docs/.nojekyll` sudah disertakan agar Jekyll tidak memproses hasil build.
+
 ### Jalankan Python sungguhan
 
 Pasang Python 3 (3.11+ disarankan). Tidak ada paket pip yang diperlukan. Simpan `main.py`, `pencatat.py`, `laporan.py`, dan `tampilan.py` dalam satu folder, atau gunakan file yang disertakan di `public/python`:

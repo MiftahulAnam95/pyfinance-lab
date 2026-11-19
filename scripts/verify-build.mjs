@@ -51,6 +51,10 @@ for (const file of pages) {
   }
 }
 
+if (!existsSync(join(OUT_DIR, '.nojekyll'))) {
+  errors.push(`${OUT_DIR}/.nojekyll tidak ada; GitHub Pages (sumber branch) akan memproses hasil build dengan Jekyll.`);
+}
+
 if (errors.length) {
   console.error(`Build tidak siap dipublikasikan:\n- ${errors.join('\n- ')}`);
   process.exit(1);
