@@ -4,7 +4,7 @@ Website belajar Python dari nol melalui proyek **Pencatat Keuangan Mahasiswa**. 
 
 ## Mulai menggunakan
 
-Buka peta belajar untuk melihat 12 bab, atau masuk ke **Simulator Terminal** untuk mencoba demo tanpa Python. Bab **Siap Presentasi** berisi naskah ±30 detik, ±2 menit dan ±5 menit, pembagian peran opsional, demo, checklist, rencana cadangan, dan 24 bahan tanya jawab. **Ringkasan Cetak** juga memuat tombol reset progres dengan konfirmasi.
+Buka peta belajar untuk melihat 12 bab, atau masuk ke **Simulator Terminal** untuk mencoba demo tanpa Python. **Mode terang/gelap** bisa diganti lewat tombol matahari/bulan di kanan atas (dan di bawah bilah sisi); pilihan disimpan di browser. Bab **Siap Presentasi** berisi naskah ±30 detik, ±2 menit dan ±5 menit, pembagian peran opsional, demo, checklist, rencana cadangan, dan 24 bahan tanya jawab. **Ringkasan Cetak** juga memuat tombol reset progres dengan konfirmasi.
 
 ### Jalankan website
 
@@ -25,6 +25,12 @@ npm run preview
 Hasil build ada di `docs/`. Jalankan `npm run preview` (menyajikan `docs/` pada base situs) atau, bila base-nya `/`, `python3 -m http.server 8000 --directory docs` lalu buka `http://localhost:8000`. Jangan membuka `index.html` via `file://`, karena rute dan aset dilayani lewat HTTP.
 
 `npm run build` selalu diakhiri pemeriksaan `npm run verify`: setiap halaman harus sudah diprerender dan semua aset yang dirujuk harus ada di bawah base situs. Kalau `verify` gagal, jangan publikasikan hasil build — biasanya berarti menyajikan HTML dev atau folder yang salah sehingga halaman tampil kosong.
+
+### Mode gelap dan terang
+
+Tema gelap adalah bawaan. Tombol di kanan atas (ikon matahari/bulan) mengganti tema, dan pilihannya disimpan di `localStorage` (`pyfinance-lab:theme:v1`) sehingga berlaku di semua halaman sesudahnya. Skrip kecil di `<head>` menerapkan tema sebelum halaman digambar agar tidak ada kedipan gelap; tanpa JavaScript, situs tetap tampil dengan tema gelap.
+
+Seluruh warna ditulis sebagai token di `src/style.css` (`:root` untuk gelap, `:root[data-theme='light']` untuk terang). Terminal, blok kode, dan contoh keluaran tetap gelap di kedua tema karena bagian itu meniru layar terminal. Perubahan token baru harus memenuhi kontras WCAG AA — `tests/theme.test.ts` menghitung rasio kontras tiap pasangan teks/latar dan gagal bila di bawah 4,5. Untuk menambah warna, tambahkan token di **kedua** blok; tes juga akan gagal bila ada token gelap yang lupa di-override atau warna hex lepas di luar blok token.
 
 ### Kalau situs yang sudah di-hosting masih tampil kosong
 
@@ -112,7 +118,7 @@ npx playwright install chromium  # Linux bisa memakai --with-deps bila diperluka
 npm run test:browser
 ```
 
-- **Lulus:** pemeriksaan tipe dan build produksi (15 halaman HTML); 5 tes Python dan 5 tes simulator/jejak. Empat tes membandingkan transkrip Python dan simulator, termasuk demo, kategori kosong, menu salah, saldo negatif, nol awal, Unicode, dan batas nominal. Tes Python juga memeriksa daftar kosong, fungsi baca-saja, serta EOF.
-- **Lulus di Chromium:** 9 tes browser untuk navigasi desktop/mobile, pencarian keyboard, jejak, latihan, presentasi, salin/unduh, penyimpanan dan reset, reduced motion, fallback tanpa JavaScript, CSS cetak, serta pemindaian axe pada empat halaman. Tampilan diperiksa pada desktop 1440×900 dan simulasi ponsel 390×844. Hanya Lenis terpasang dan aktif saat reduced motion tidak diminta.
+- **Lulus:** pemeriksaan tipe dan build produksi (15 halaman HTML); 5 tes Python, 5 tes simulator/jejak, dan 5 tes tema (token lengkap + kontras kedua tema). Empat tes membandingkan transkrip Python dan simulator, termasuk demo, kategori kosong, menu salah, saldo negatif, nol awal, Unicode, dan batas nominal. Tes Python juga memeriksa daftar kosong, fungsi baca-saja, serta EOF.
+- **Lulus di Chromium:** 11 tes browser untuk navigasi desktop/mobile, pencarian keyboard, jejak, latihan, presentasi, salin/unduh, penyimpanan dan reset, reduced motion, fallback tanpa JavaScript, CSS cetak, pemindaian axe pada empat halaman, serta mode terang (toggle, penyimpanan pilihan, dan hijrah halaman). Tampilan diperiksa pada desktop 1440×900 dan simulasi ponsel 390×844. Hanya Lenis terpasang dan aktif saat reduced motion tidak diminta.
 - **Lulus simulasi GitHub Pages:** versi produksi dibuka pada subfolder `/kelas-uas2026/` dari server berkas statis tanpa fallback SPA. Sembilan tes browser lulus; tautan internal dan aset yang direferensikan dari seluruh 15 halaman merespons HTTP 200.
 - **Belum diuji:** Safari/Firefox, ponsel fisik, pembaca layar manual, hasil dari printer fisik, dan publikasi di akun GitHub pengguna. Pemindaian axe bukan sertifikasi aksesibilitas.
