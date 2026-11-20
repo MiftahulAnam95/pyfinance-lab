@@ -35,7 +35,7 @@ Cek cepat:
 1. Buka `https://USERNAME.github.io/NAMA-REPO/`, klik kanan → **View Page Source**, cari `<script`. Kalau tertulis `/src/main.tsx`, sumber publikasinya salah.
 2. Di repo, buka **Settings → Pages → Build and deployment → Source** dan pastikan **Deploy from a branch**, **Branch: `main`**, **Folder: `/docs`** (bukan `/` atau `/root`). Setelan ini tidak disimpan di repo, jadi harus dipilih manual sekali di setiap repo.
 3. Setelah diubah, tunggu build Pages selesai (tab **Actions**, workflow `pages-build-deployment`), lalu muat ulang dengan **Ctrl+Shift+R** karena browser kerap menyimpan HTML lama.
-4. Kalau memilih mode **GitHub Actions** (workflow `.github/workflows/pages.yml`), pastikan Source-nya juga **GitHub Actions**, bukan Deploy from a branch. Jangan mencampur keduanya: workflow Actions tidak bisa menimpa situs yang sumbernya branch.
+4. Kalau memilih mode **GitHub Actions** (workflow `.github/workflows/pages.yml`), set **Settings → Pages → Build and deployment → Source: GitHub Actions**, bukan Deploy from a branch. Jangan mencampur keduanya: selama sumbernya masih branch, build dari branch itu yang tayang dan deploy workflow kalah, meskipun job-nya terlihat "success". Setelah memilih GitHub Actions, buka tab **Actions → Deploy PyFinance Lab to Pages → Run workflow** (branch `main`). Workflow ini berakhir dengan pemeriksaan HTML yang benar-benar tayang: kalau halaman masih memuat `/src/main.tsx` atau belum berisi hasil build, job-nya **gagal dengan pesan yang menjelaskan** — jadi kegagalan tidak lagi berupa halaman kosong yang senyap.
 
 Kalau `docs/` disajikan lewat sumber branch, `docs/.nojekyll` sudah disertakan agar Jekyll tidak memproses hasil build.
 
