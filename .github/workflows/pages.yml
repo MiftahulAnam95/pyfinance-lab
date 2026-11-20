@@ -29,6 +29,18 @@ jobs:
       - run: npm run build
       - name: Cek build
         run: npm run verify
+      - name: Cek sumber publikasi Pages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cfg=$(curl -sS -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "${{ github.api_url }}/repos/${{ github.repository }}/pages")
+          mode=$(printf '%s' "$cfg" | jq -r '.build_type // "none"')
+          src=$(printf '%s' "$cfg" | jq -r 'if .source then "\(.source.branch)\(.source.path)" else "-" end')
+          echo "Sumber Pages saat ini: $mode ($src)"
+          if [ "$mode" != "workflow" ]; then
+            echo "::warning::Settings → Pages → Source belum 'GitHub Actions'. Build dari branch akan menimpa deploy workflow ini dan situs bisa tampil kosong (memuat /src/main.tsx)."
+          fi
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -43,3 +55,26 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+      # Deploy bisa "sukses" tetapi situsnya tetap disajikan dari branch.
+      # Langkah ini memeriksa HTML yang benar-benar tayang.
+      - name: Pastikan situs yang tayang adalah hasil build
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          set -u
+          html=""
+          for i in $(seq 1 10); do
+            html=$(curl -sSL --max-time 20 "$PAGE_URL" || true)
+            if printf '%s' "$html" | grep -q 'data-prerender="true"'; then break; fi
+            echo "Percobaan $i/10: konten build belum tayang, menunggu 15 detik…"
+            sleep 15
+          done
+          if printf '%s' "$html" | grep -q '"/src/main.tsx"'; then
+            echo "::error::Situs $PAGE_URL masih menyajikan index.html pengembangan (/src/main.tsx). Buka Settings → Pages → Build and deployment → Source, pilih 'GitHub Actions', lalu jalankan ulang workflow ini."
+            exit 1
+          fi
+          if ! printf '%s' "$html" | grep -q 'data-prerender="true"'; then
+            echo "::error::Situs $PAGE_URL belum menyajikan HTML hasil build setelah 10 percobaan. Periksa Settings → Pages → Source."
+            exit 1
+          fi
+          echo "OK: $PAGE_URL menyajikan HTML hasil build."
