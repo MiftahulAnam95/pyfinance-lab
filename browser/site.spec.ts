@@ -153,3 +153,45 @@ test('aksesibilitas otomatis: beranda, kode, simulator dan presentasi',async({pa
   expect(scan.violations.map(({id,nodes})=>({id,targets:nodes.map(n=>n.target)})),route).toEqual([]);
  }
 });
+
+test('mode terang: toggle, warna ikut berubah, tersimpan dan tanpa kedip',async({page})=>{
+ await page.goto('./');
+ const html=page.locator('html');
+ await expect(html).toHaveAttribute('data-theme','dark');
+ const darkBg=await page.locator('body').evaluate(()=>getComputedStyle(document.body).backgroundColor);
+ await page.locator('.topbar .theme-toggle').click();
+ await expect(html).toHaveAttribute('data-theme','light');
+ const lightBg=await page.locator('body').evaluate(()=>getComputedStyle(document.body).backgroundColor);
+ expect(lightBg).not.toBe(darkBg);
+ // teks utama harus tetap terbaca (gelap di atas latar terang)
+ const color=await page.locator('body').evaluate(()=>getComputedStyle(document.body).color);
+ expect(color).toBe('rgb(17, 26, 24)');
+ expect(await page.evaluate(()=>localStorage.getItem('pyfinance-lab:theme:v1'))).toBe('light');
+ await expect(page.getByRole('button',{name:'Aktifkan mode gelap'}).first()).toBeVisible();
+ // tema bertahan setelah pindah halaman & muat ulang
+ await page.getByRole('link',{name:'Peta Belajar'}).first().click();
+ await expect(html).toHaveAttribute('data-theme','light');
+ await page.reload();
+ await expect(html).toHaveAttribute('data-theme','light');
+ // kembali ke gelap
+ await page.locator('.topbar .theme-toggle').click();
+ await expect(html).toHaveAttribute('data-theme','dark');
+});
+
+test('mode terang: tidak ada teks yang menyatu dengan latar di halaman materi',async({page})=>{
+ await page.goto('./');
+ await page.locator('.topbar .theme-toggle').click();
+ await expect(page.locator('html')).toHaveAttribute('data-theme','light');
+ const samples=await page.evaluate(()=>{
+  const parse=(c)=>c.match(/[\d.]+/g).slice(0,3).map(Number);
+  const lum=(c)=>{const [r,g,b]=parse(c).map(v=>{v/=255;return v<=0.03928?v/12.92:((v+0.055)/1.055)**2.4});return .2126*r+.7152*g+.0722*b};
+  const bgOf=(el)=>{let n=el;while(n&&n!==document.documentElement){const bg=getComputedStyle(n).backgroundColor;if(bg&&bg!=='rgba(0, 0, 0, 0)')return bg;n=n.parentElement}return getComputedStyle(document.body).backgroundColor};
+  return ['h1','.hero-copy>p','.chapter-card p','.card-top .mono','.footer span','.counter-chip','.brand small'].map(sel=>{
+    const el=document.querySelector(sel); if(!el)return {sel,skip:true};
+    const fg=getComputedStyle(el).color,bg=bgOf(el);
+    const [hi,lo]=[lum(fg),lum(bg)].sort((a,b)=>b-a);
+    return {sel,ratio:(hi+.05)/(lo+.05)};
+  }).filter(x=>!x.skip);
+ });
+ for(const s of samples) expect(s.ratio,`${s.sel} rasio ${s.ratio}`).toBeGreaterThanOrEqual(4.5);
+});
